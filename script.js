@@ -73,6 +73,16 @@ const sampleData = {
       "Git, Docker, TravisCI, Google Cloud Platform, VS Code, Visual Studio, PyCharm, IntelliJ, Eclipse",
     libraries: "pandas, NumPy, Matplotlib",
   },
+  languageProficiency: [
+    {
+      language: "English",
+      proficiency: 5,
+    },
+    {
+      language: "Hindi",
+      proficiency: 4,
+    },
+  ],
 };
 
 // Helper function to create date dropdown HTML
@@ -268,9 +278,35 @@ function setDropdownFromDateString(container, dateString) {
   if (hiddenInput) hiddenInput.value = dateString;
 }
 
+// Dark mode toggle functionality
+function toggleDarkMode() {
+  const body = document.body;
+
+  if (body.getAttribute("data-theme") === "dark") {
+    // Switch to light mode
+    body.removeAttribute("data-theme");
+    localStorage.setItem("theme", "light");
+  } else {
+    // Switch to dark mode
+    body.setAttribute("data-theme", "dark");
+    localStorage.setItem("theme", "dark");
+  }
+}
+
+// Load saved theme on page load
+function loadSavedTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  const body = document.body;
+
+  if (savedTheme === "dark") {
+    body.setAttribute("data-theme", "dark");
+  }
+}
+
 // Initialize the application
 document.addEventListener("DOMContentLoaded", function () {
   setupEventListeners();
+  loadSavedTheme();
   updatePreview();
 });
 
@@ -306,6 +342,92 @@ function setupEventListeners() {
       element.addEventListener("input", updatePreview);
     }
   });
+
+  // Set up star rating event listeners
+  setupStarRatingListeners();
+}
+
+// Set up star rating event listeners
+function setupStarRatingListeners() {
+  document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("star")) {
+      handleStarClick(e.target);
+    }
+  });
+
+  document.addEventListener("mouseover", function (e) {
+    if (e.target.classList.contains("star")) {
+      handleStarHover(e.target);
+    }
+  });
+
+  document.addEventListener("mouseout", function (e) {
+    if (e.target.classList.contains("star")) {
+      handleStarMouseOut(e.target);
+    }
+  });
+}
+
+// Handle star click
+function handleStarClick(star) {
+  const rating = parseInt(star.dataset.value);
+  const starRating = star.parentElement;
+  const hiddenInput =
+    starRating.parentElement.querySelector(".proficiency-level");
+  const label = starRating.querySelector(".rating-label");
+
+  // Update rating
+  starRating.dataset.rating = rating;
+  hiddenInput.value = rating;
+
+  // Update visual stars
+  updateStarDisplay(starRating, rating);
+
+  // Update label
+  updateRatingLabel(label, rating);
+
+  // Update preview
+  updatePreview();
+}
+
+// Handle star hover
+function handleStarHover(star) {
+  const rating = parseInt(star.dataset.value);
+  const starRating = star.parentElement;
+  updateStarDisplay(starRating, rating, true);
+}
+
+// Handle star mouse out
+function handleStarMouseOut(star) {
+  const starRating = star.parentElement;
+  const currentRating = parseInt(starRating.dataset.rating);
+  updateStarDisplay(starRating, currentRating);
+}
+
+// Update star display
+function updateStarDisplay(starRating, rating, isHover = false) {
+  const stars = starRating.querySelectorAll(".star");
+  stars.forEach((star, index) => {
+    const starValue = index + 1;
+    star.classList.remove("active", "hover");
+
+    if (starValue <= rating) {
+      star.classList.add(isHover ? "hover" : "active");
+    }
+  });
+}
+
+// Update rating label
+function updateRatingLabel(label, rating) {
+  const labels = {
+    1: "Basic",
+    2: "Elementary",
+    3: "Intermediate",
+    4: "Advanced",
+    5: "Native/Fluent",
+  };
+
+  label.textContent = labels[rating] || "Basic";
 }
 
 // Add new education entry
@@ -317,7 +439,7 @@ function addEducation() {
         <div class="entry-item" data-type="education" data-index="${index}">
             <div class="entry-header">
                 <span class="entry-title">Education ${index + 1}</span>
-                <button type="button" class="remove-btn" onclick="removeEntry(this)">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry(this)">×</button>
             </div>
             <div class="form-group">
                 <label>Institution</label>
@@ -355,7 +477,7 @@ function addExperience() {
         <div class="entry-item" data-type="experience" data-index="${index}">
             <div class="entry-header">
                 <span class="entry-title">Experience ${index + 1}</span>
-                <button type="button" class="remove-btn" onclick="removeEntry(this)">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry(this)">×</button>
             </div>
             <div class="form-group">
                 <label>Job Title</label>
@@ -400,7 +522,7 @@ function addProject() {
         <div class="entry-item" data-type="project" data-index="${index}">
             <div class="entry-header">
                 <span class="entry-title">Project ${index + 1}</span>
-                <button type="button" class="remove-btn" onclick="removeEntry(this)">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry(this)">×</button>
             </div>
             <div class="form-group">
                 <label>Project Name</label>
@@ -441,7 +563,7 @@ function addHonor() {
         <div class="entry-item" data-type="honor" data-index="${index}">
             <div class="entry-header">
                 <span class="entry-title">Honor ${index + 1}</span>
-                <button type="button" class="remove-btn" onclick="removeEntry(this)">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry(this)">×</button>
             </div>
             <div class="form-group">
                 <label>Award/Honor Title</label>
@@ -471,7 +593,7 @@ function addCertification() {
         <div class="entry-item" data-type="certification" data-index="${index}">
             <div class="entry-header">
                 <span class="entry-title">Certification ${index + 1}</span>
-                <button type="button" class="remove-btn" onclick="removeEntry(this)">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry(this)">×</button>
             </div>
             <div class="form-group">
                 <label>Certification Name</label>
@@ -501,26 +623,36 @@ function addLanguage() {
         <div class="entry-item" data-type="language" data-index="${index}">
             <div class="entry-header">
                 <span class="entry-title">Language ${index + 1}</span>
-                <button type="button" class="remove-btn" onclick="removeEntry(this)">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry(this)">×</button>
             </div>
             <div class="form-group">
                 <label>Language</label>
                 <input type="text" class="language-name" placeholder="English" oninput="updatePreview()">
             </div>
             <div class="form-group">
-                <label>Proficiency Level (1-5 stars)</label>
-                <select class="proficiency-level" onchange="updatePreview()">
-                    <option value="1">★ (Basic)</option>
-                    <option value="2">★★ (Elementary)</option>
-                    <option value="3">★★★ (Intermediate)</option>
-                    <option value="4">★★★★ (Advanced)</option>
-                    <option value="5" selected>★★★★★ (Native/Fluent)</option>
-                </select>
+                <label>Proficiency Level</label>
+                <div class="star-rating" data-rating="5">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                    <span class="rating-label">Native/Fluent</span>
+                </div>
+                <input type="hidden" class="proficiency-level" value="5">
             </div>
         </div>
     `;
 
   container.insertAdjacentHTML("beforeend", languageHTML);
+
+  // Initialize the star rating for the new entry
+  const newEntry = container.lastElementChild;
+  const starRating = newEntry.querySelector(".star-rating");
+  if (starRating) {
+    updateStarDisplay(starRating, 5); // Default to 5 stars
+  }
+
   updatePreview();
 }
 
@@ -1067,6 +1199,32 @@ function loadSampleData() {
         bulletsContainer.lastElementChild.querySelector("textarea");
       lastBullet.value = bullet;
     });
+  });
+
+  // Load language proficiency
+  document.getElementById("languagesContainer").innerHTML = "";
+  sampleData.languageProficiency.forEach(() => {
+    addLanguage();
+  });
+
+  const languageEntries = document.querySelectorAll(
+    "#languagesContainer .entry-item"
+  );
+  languageEntries.forEach((entry, index) => {
+    const lang = sampleData.languageProficiency[index];
+    entry.querySelector(".language-name").value = lang.language;
+
+    // Set star rating
+    const starRating = entry.querySelector(".star-rating");
+    const hiddenInput = entry.querySelector(".proficiency-level");
+    const label = entry.querySelector(".rating-label");
+
+    if (starRating && hiddenInput && label) {
+      starRating.dataset.rating = lang.proficiency;
+      hiddenInput.value = lang.proficiency;
+      updateStarDisplay(starRating, lang.proficiency);
+      updateRatingLabel(label, lang.proficiency);
+    }
   });
 
   updatePreview();

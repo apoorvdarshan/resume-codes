@@ -9,9 +9,9 @@ A modern, professional resume builder with live preview and multiple export form
 - **🔴 Live Preview** - See changes instantly as you type
 - **📱 Responsive Design** - Works perfectly on all devices
 - **📊 Multiple Sections** - Personal info, experience, education, projects, skills, and more
-- **⬇️ Export Options** - Download as PDF, DOCX, or image formats
+- **⬇️ Export Options** - Download as PDF, or image formats
 - **🎨 Professional Styling** - LaTeX-inspired clean design
-- **🌟 Modern UI** - Futuristic cyberpunk-themed interface
+- **🌟 Modern UI** - Doodle Art themed interface
 - **♿ Accessible** - Screen reader friendly with ARIA labels
 - **⚡ Fast Performance** - Service worker caching for offline use
 
