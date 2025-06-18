@@ -1490,8 +1490,10 @@ function showPayPalModal(amount, description, exportType) {
     background: rgba(0,0,0,0.5);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     z-index: 10000;
+    overflow-y: auto;
+    padding: 20px 0;
   `;
 
   const modalContent = document.createElement("div");
@@ -1503,6 +1505,9 @@ function showPayPalModal(amount, description, exportType) {
     width: 90%;
     text-align: center;
     position: relative;
+    margin: auto;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
   `;
 
   modalContent.innerHTML = `
