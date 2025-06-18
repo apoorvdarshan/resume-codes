@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
-const Razorpay = require("razorpay");
+const axios = require("axios");
 const path = require("path");
 
 const app = express();
@@ -12,37 +12,83 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("./")); // Serve static files
 
-// Razorpay Configuration with Secret Key
-const razorpay = new Razorpay({
-  key_id: "rzp_live_McNKjjPIAKglzo",
-  key_secret: "r09anvr5bqRnC6iKt0Ywm2GE", // 🔒 Server-side secret key
-});
+// PayPal Configuration
+const PAYPAL_CONFIG = {
+  client_id:
+    "AcTFapMkTuckCRi5Goi5Ll_b2GukjvJYgVYz2ogGNlrR4JcHg6WKGl6R8JS8Rp0-leSrjUygmqNl5lAK",
+  client_secret:
+    "EASwVCSDOoCwi6839Eqmfz09X5toTxSDA2ovcM9ZptJAymZNdXmUNpuhZiQ9AtfnLEs0GpBMyodK6_kQ", // 🔒 Server-side secret key
+  base_url: "https://api-m.paypal.com", // Use https://api-m.sandbox.paypal.com for sandbox
+};
 
 // Serve the main HTML file
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Create Razorpay Order (Optional - for better security)
+// Get PayPal Access Token
+async function getPayPalAccessToken() {
+  try {
+    const auth = Buffer.from(
+      `${PAYPAL_CONFIG.client_id}:${PAYPAL_CONFIG.client_secret}`
+    ).toString("base64");
+
+    const response = await axios.post(
+      `${PAYPAL_CONFIG.base_url}/v1/oauth2/token`,
+      "grant_type=client_credentials",
+      {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    return response.data.access_token;
+  } catch (error) {
+    console.error("Error getting PayPal access token:", error);
+    throw error;
+  }
+}
+
+// Create PayPal Order
 app.post("/api/create-order", async (req, res) => {
   try {
-    const { amount, currency, receipt } = req.body;
+    const { amount, currency, description } = req.body;
+    const accessToken = await getPayPalAccessToken();
 
-    const options = {
-      amount: amount, // amount in paise
-      currency: currency || "INR",
-      receipt: receipt || `receipt_${Date.now()}`,
+    const orderData = {
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          amount: {
+            currency_code: currency || "USD",
+            value: amount,
+          },
+          description: description || "Resume Export",
+        },
+      ],
     };
 
-    const order = await razorpay.orders.create(options);
+    const response = await axios.post(
+      `${PAYPAL_CONFIG.base_url}/v2/checkout/orders`,
+      orderData,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
     res.json({
       success: true,
-      order_id: order.id,
-      amount: order.amount,
-      currency: order.currency,
+      order_id: response.data.id,
+      amount: amount,
+      currency: currency || "USD",
     });
   } catch (error) {
-    console.error("Error creating order:", error);
+    console.error("Error creating PayPal order:", error);
     res.status(500).json({
       success: false,
       message: "Failed to create order",
@@ -50,32 +96,36 @@ app.post("/api/create-order", async (req, res) => {
   }
 });
 
-// Verify Payment Signature
-app.post("/api/verify-payment", (req, res) => {
+// Verify PayPal Payment
+app.post("/api/verify-payment", async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-      req.body;
+    const { order_id } = req.body;
+    const accessToken = await getPayPalAccessToken();
 
-    // Create verification signature
-    const sign = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSign = crypto
-      .createHmac("sha256", "r09anvr5bqRnC6iKt0Ywm2GE")
-      .update(sign.toString())
-      .digest("hex");
+    const response = await axios.get(
+      `${PAYPAL_CONFIG.base_url}/v2/checkout/orders/${order_id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    if (razorpay_signature === expectedSign) {
+    if (response.data.status === "COMPLETED") {
       res.json({
         success: true,
         message: "Payment verified successfully",
+        payment: response.data,
       });
     } else {
       res.status(400).json({
         success: false,
-        message: "Invalid payment signature",
+        message: "Payment not completed",
       });
     }
   } catch (error) {
-    console.error("Error verifying payment:", error);
+    console.error("Error verifying PayPal payment:", error);
     res.status(500).json({
       success: false,
       message: "Payment verification failed",
@@ -83,43 +133,34 @@ app.post("/api/verify-payment", (req, res) => {
   }
 });
 
-// Razorpay Webhook Handler
-app.post("/api/webhook", (req, res) => {
+// PayPal Webhook Handler
+app.post("/api/webhook", async (req, res) => {
   try {
-    const secret = "your_webhook_secret"; // Set this in Razorpay dashboard
-    const signature = req.headers["x-razorpay-signature"];
+    // PayPal webhook verification would go here
+    // For now, just log the webhook data
+    console.log("PayPal webhook received:", req.body);
 
-    // Verify webhook signature
-    const expectedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(JSON.stringify(req.body))
-      .digest("hex");
+    const event = req.body.event_type;
+    const resource = req.body.resource;
 
-    if (signature === expectedSignature) {
-      const event = req.body.event;
-      const payment = req.body.payload.payment.entity;
+    console.log(`Webhook received: ${event}`);
+    console.log("Payment details:", resource);
 
-      console.log(`Webhook received: ${event}`);
-      console.log("Payment details:", payment);
-
-      // Handle different webhook events
-      switch (event) {
-        case "payment.captured":
-          console.log(`Payment captured: ${payment.id}`);
-          // Handle successful payment
-          break;
-        case "payment.failed":
-          console.log(`Payment failed: ${payment.id}`);
-          // Handle failed payment
-          break;
-        default:
-          console.log(`Unhandled event: ${event}`);
-      }
-
-      res.status(200).json({ status: "ok" });
-    } else {
-      res.status(400).json({ error: "Invalid signature" });
+    // Handle different webhook events
+    switch (event) {
+      case "CHECKOUT.ORDER.COMPLETED":
+        console.log(`Payment completed: ${resource.id}`);
+        // Handle successful payment
+        break;
+      case "CHECKOUT.ORDER.CANCELLED":
+        console.log(`Payment cancelled: ${resource.id}`);
+        // Handle cancelled payment
+        break;
+      default:
+        console.log(`Unhandled event: ${event}`);
     }
+
+    res.status(200).json({ status: "ok" });
   } catch (error) {
     console.error("Webhook error:", error);
     res.status(500).json({ error: "Webhook processing failed" });
@@ -130,14 +171,24 @@ app.post("/api/webhook", (req, res) => {
 app.get("/api/payment/:payment_id", async (req, res) => {
   try {
     const { payment_id } = req.params;
-    const payment = await razorpay.payments.fetch(payment_id);
+    const accessToken = await getPayPalAccessToken();
+
+    const response = await axios.get(
+      `${PAYPAL_CONFIG.base_url}/v2/checkout/orders/${payment_id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     res.json({
       success: true,
-      payment: payment,
+      payment: response.data,
     });
   } catch (error) {
-    console.error("Error fetching payment:", error);
+    console.error("Error fetching PayPal payment:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch payment details",
@@ -167,7 +218,7 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Access your app at: http://localhost:${PORT}`);
-  console.log(`💳 Razorpay integration: ACTIVE (Live Mode)`);
+  console.log(`💳 PayPal integration: ACTIVE (Live Mode)`);
 });
 
 module.exports = app;

@@ -1309,13 +1309,14 @@ function loadSampleData() {
    - Generate Live Keys for production
 
 3. CONFIGURE BELOW:
-   - Replace "YOUR_RAZORPAY_KEY_ID" with your actual Key ID
-   - Test: rzp_test_XXXXXXXXXX
-   - Live: rzp_live_XXXXXXXXXX
+   - Replace "YOUR_PAYPAL_CLIENT_ID" with your actual Client ID
+   - Test: Use sandbox client ID
+   - Live: Use live client ID
 
 4. PRICING SET:
-   - PDF Export: ₹29 (2900 paise)
-   - Image Export: ₹19 (1900 paise)
+   - PDF Export: $1.49
+   - Image Export: $0.99
+   - Combo (Both): $1.99
 
 5. FEATURES INCLUDED:
    ✅ Payment validation
@@ -1324,7 +1325,7 @@ function loadSampleData() {
    ✅ Google Analytics integration
    ✅ Demo mode for testing
 
-NOTE: Until you add your Razorpay Key ID, the system will offer FREE exports for testing.
+NOTE: Until you add your PayPal Client ID, the system will offer FREE exports for testing.
 */
 
 // Modern Notification System
@@ -1408,28 +1409,31 @@ const NotificationSystem = {
     return this.show(message, "payment", null, title);
   },
 };
-const RAZORPAY_CONFIG = {
-  key: "rzp_live_McNKjjPIAKglzo", // ✅ Live Key ID configured
-  currency: "INR",
+const PAYPAL_CONFIG = {
+  client_id:
+    "AcTFapMkTuckCRi5Goi5Ll_b2GukjvJYgVYz2ogGNlrR4JcHg6WKGl6R8JS8Rp0-leSrjUygmqNl5lAK", // ✅ Live Client ID configured
+  currency: "USD",
   name: "resume.codes",
   description: "Professional Resume Export",
-  image: "https://resume.codes/favicon.png",
-  theme: {
-    color: "#4a90e2",
+  intent: "capture",
+  style: {
+    color: "blue",
+    shape: "rect",
+    label: "paypal",
   },
 };
 
 // Payment prices
 const EXPORT_PRICES = {
-  pdf: 2900, // ₹29 in paise
-  image: 1900, // ₹19 in paise
+  pdf: 149, // $1.49 in cents
+  image: 99, // $0.99 in cents
+  both: 199, // $1.99 in cents (combo deal)
 };
 
 // Initiate payment for export
 function initiatePayment(exportType) {
   const fullName = document.getElementById("fullName").value || "User";
   const email = document.getElementById("email").value || "";
-  const phone = document.getElementById("phone").value || "";
 
   if (!fullName.trim() || fullName === "Your Name") {
     NotificationSystem.warning(
@@ -1440,8 +1444,8 @@ function initiatePayment(exportType) {
     return;
   }
 
-  // Check if Razorpay is configured
-  if (RAZORPAY_CONFIG.key === "YOUR_RAZORPAY_KEY_ID") {
+  // Check if PayPal is configured
+  if (PAYPAL_CONFIG.client_id === "YOUR_PAYPAL_CLIENT_ID") {
     // For testing/demo purposes - allow free export
     NotificationSystem.warning(
       `Payment gateway not configured! Proceeding with FREE ${exportType.toUpperCase()} export for demo purposes.`,
@@ -1450,9 +1454,9 @@ function initiatePayment(exportType) {
 
     // Create a mock payment response for testing
     const mockResponse = {
-      razorpay_payment_id: "pay_demo_" + Date.now(),
-      razorpay_order_id: "order_demo_" + Date.now(),
-      razorpay_signature: "demo_signature",
+      paypal_payment_id: "pay_demo_" + Date.now(),
+      paypal_order_id: "order_demo_" + Date.now(),
+      status: "COMPLETED",
     };
 
     setTimeout(() => {
@@ -1461,62 +1465,143 @@ function initiatePayment(exportType) {
     return;
   }
 
-  const amount = EXPORT_PRICES[exportType];
+  const amount = (EXPORT_PRICES[exportType] / 100).toFixed(2); // Convert cents to dollars
   const description =
-    exportType === "pdf" ? "Resume PDF Export" : "Resume Image Export";
+    exportType === "pdf"
+      ? "Resume PDF Export"
+      : exportType === "image"
+      ? "Resume Image Export"
+      : "Resume PDF + Image Export";
 
-  const options = {
-    ...RAZORPAY_CONFIG,
-    amount: amount,
-    description: description,
-    prefill: {
-      name: fullName,
-      email: email,
-      contact: phone.replace(/[\s\-\(\)]/g, ""), // Clean phone number
-    },
-    handler: function (response) {
-      // Payment successful
-      handlePaymentSuccess(response, exportType);
-    },
-    modal: {
-      ondismiss: function () {
-        console.log("Payment dismissed");
+  // Create and show PayPal payment modal
+  showPayPalModal(amount, description, exportType);
+}
+
+// Show PayPal payment modal
+function showPayPalModal(amount, description, exportType) {
+  // Create modal
+  const modal = document.createElement("div");
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  `;
+
+  const modalContent = document.createElement("div");
+  modalContent.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+  `;
+
+  modalContent.innerHTML = `
+    <button onclick="closePayPalModal()" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+    <h3 style="margin-bottom: 10px; color: #333;">${description}</h3>
+    <p style="margin-bottom: 20px; color: #666;">Amount: $${amount}</p>
+    <div id="paypal-button-container-modal"></div>
+  `;
+
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  modal.id = "paypal-modal";
+
+  // Initialize PayPal buttons in modal
+  paypal
+    .Buttons({
+      createOrder: function (data, actions) {
+        return actions.order.create({
+          purchase_units: [
+            {
+              amount: {
+                value: amount,
+                currency_code: PAYPAL_CONFIG.currency,
+              },
+              description: description,
+              soft_descriptor: "resume.codes",
+            },
+          ],
+          application_context: {
+            brand_name: PAYPAL_CONFIG.name,
+            locale: "en-US",
+            landing_page: "BILLING",
+            user_action: "PAY_NOW",
+          },
+        });
       },
-    },
-  };
+      onApprove: function (data, actions) {
+        return actions.order.capture().then(function (details) {
+          // Close modal
+          closePayPalModal();
 
-  const rzp = new Razorpay(options);
+          // Payment successful
+          const response = {
+            paypal_payment_id: details.id,
+            paypal_order_id: data.orderID,
+            status: details.status,
+            payer: details.payer,
+          };
+          handlePaymentSuccess(response, exportType);
+        });
+      },
+      onError: function (err) {
+        closePayPalModal();
+        NotificationSystem.error(
+          "Payment failed! Please try again. 💳",
+          "Payment Failed"
+        );
+        console.error("PayPal payment failed:", err);
+      },
+      onCancel: function (data) {
+        closePayPalModal();
+        console.log("Payment cancelled by user");
+      },
+      style: PAYPAL_CONFIG.style,
+    })
+    .render("#paypal-button-container-modal");
+}
 
-  rzp.on("payment.failed", function (response) {
-    NotificationSystem.error(
-      "Payment failed! Please try again. 💳",
-      "Payment Failed"
-    );
-    console.error("Payment failed:", response.error);
-  });
-
-  rzp.open();
+// Close PayPal modal
+function closePayPalModal() {
+  const modal = document.getElementById("paypal-modal");
+  if (modal) {
+    modal.remove();
+  }
 }
 
 // Handle successful payment
 function handlePaymentSuccess(response, exportType) {
   // Show success message
   NotificationSystem.payment(
-    `Transaction ID: ${response.razorpay_payment_id}`,
+    `Transaction ID: ${response.paypal_payment_id}`,
     "Payment Successful! 🎉"
   );
 
   // Track payment in analytics
   if (typeof gtag !== "undefined") {
     gtag("event", "purchase", {
-      transaction_id: response.razorpay_payment_id,
+      transaction_id: response.paypal_payment_id,
       value: EXPORT_PRICES[exportType] / 100,
-      currency: "INR",
+      currency: "USD",
       items: [
         {
           item_id: exportType,
           item_name:
-            exportType === "pdf" ? "Resume PDF Export" : "Resume Image Export",
+            exportType === "pdf"
+              ? "Resume PDF Export"
+              : exportType === "image"
+              ? "Resume Image Export"
+              : "Resume PDF + Image Export",
           quantity: 1,
           price: EXPORT_PRICES[exportType] / 100,
         },
@@ -1529,6 +1614,8 @@ function handlePaymentSuccess(response, exportType) {
     exportToPDF();
   } else if (exportType === "image") {
     exportToImage();
+  } else if (exportType === "both") {
+    exportBoth();
   }
 }
 
@@ -1591,6 +1678,56 @@ function exportToImage() {
       "Export Complete"
     );
   });
+}
+
+// Export Both PDF and Image (after payment)
+function exportBoth() {
+  const element = document.getElementById("resumePreview");
+  const watermark = document.getElementById("previewWatermark");
+  const baseName = document.getElementById("fullName").value || "Resume";
+
+  // Hide watermark during export
+  watermark.style.display = "none";
+
+  NotificationSystem.info(
+    "Preparing both PDF and Image exports... Please wait! 📄🖼️",
+    "Export in Progress"
+  );
+
+  // First export PDF
+  const pdfOptions = {
+    margin: 0.5,
+    filename: `${baseName}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+  };
+
+  html2pdf()
+    .set(pdfOptions)
+    .from(element)
+    .save()
+    .then(() => {
+      // After PDF is saved, export Image
+      html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      }).then((canvas) => {
+        // Show watermark again after both exports
+        watermark.style.display = "block";
+
+        const link = document.createElement("a");
+        link.download = `${baseName}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+
+        NotificationSystem.success(
+          "Both PDF and Image have been downloaded successfully! 📄🖼️✨",
+          "Export Complete"
+        );
+      });
+    });
 }
 
 // Get current resume data
