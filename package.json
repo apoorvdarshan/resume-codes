@@ -1,7 +1,7 @@
 {
   "name": "resume-codes-server",
   "version": "1.0.0",
-  "description": "Server-side component for Resume.codes with PayPal payment integration",
+  "description": "Server-side component for Resume.codes with Razorpay payment integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,7 +11,7 @@
   "keywords": [
     "resume",
     "builder",
-    "paypal",
+    "razorpay",
     "payment",
     "nodejs",
     "express"
@@ -21,9 +21,9 @@
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
-    "axios": "^1.6.0",
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "razorpay": "^2.8.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

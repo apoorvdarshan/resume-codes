@@ -942,48 +942,44 @@ body::after {
 
 .export-buttons {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .export-btn {
   background: var(--doodle-blue);
   color: white;
   border: 3px solid var(--ink-dark);
-  padding: 8px 12px;
-  border-radius: 20px;
+  padding: 12px 20px;
+  border-radius: 25px;
   font-family: "Caveat", cursive;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   transform: rotate(-1deg);
   box-shadow: 3px 3px 0px var(--ink-dark);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   text-align: center;
   line-height: 1.2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  flex: 1;
-  min-width: 0;
+  gap: 8px;
 }
 
 .export-btn small {
   font-size: 18px;
-  font-weight: 900;
+  font-weight: bold;
   opacity: 1;
   text-transform: none;
   letter-spacing: normal;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
   padding: 4px 8px;
   border-radius: 12px;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
-  display: block;
-  margin-top: 2px;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.2);
 }
 
 .export-btn:hover {

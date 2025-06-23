@@ -2,7 +2,7 @@
 
 ## Overview
 
-This server-side component handles secure PayPal payment processing with the client_secret.
+This server-side component handles secure Razorpay payment processing with the key_secret.
 
 ## 🔧 Quick Setup
 
@@ -31,18 +31,18 @@ npm run dev
 
 ### Server-side Key Management
 
-- ✅ **Client Secret**: `EASwVCSDOoCwi6839Eqmfz09X5toTxSDA2ovcM9ZptJAymZNdXmUNpuhZiQ9AtfnLEs0GpBMyodK6_kQ` (Live)
+- ✅ **Key Secret**: `r09anvr5bqRnC6iKt0Ywm2GE` (Live)
 - ✅ **Secure Storage**: Never exposed to frontend
-- ✅ **Payment Verification**: Server-side order validation
+- ✅ **Payment Verification**: Server-side signature validation
 
 ## 📡 API Endpoints
 
 ### Payment APIs
 
-- `POST /api/create-order` - Create PayPal order
-- `POST /api/verify-payment` - Verify payment completion
+- `POST /api/create-order` - Create Razorpay order
+- `POST /api/verify-payment` - Verify payment signature
 - `GET /api/payment/:id` - Get payment details
-- `POST /api/webhook` - Handle PayPal webhooks
+- `POST /api/webhook` - Handle Razorpay webhooks
 
 ### Utility APIs
 
@@ -51,15 +51,15 @@ npm run dev
 
 ## 🧪 Testing Payment Flow
 
-### 1. Test PayPal Account
+### 1. Test Cards
 
-- **Sandbox**: Use PayPal sandbox credentials
-- **Live**: Use real PayPal account
-- **Testing**: PayPal provides test buyer accounts
+- **Success**: `4111 1111 1111 1111`
+- **Failure**: `4000 0000 0000 0002`
+- **CVV**: `123` | **Expiry**: `12/25`
 
 ### 2. Webhook Testing
 
-Configure webhook URL in PayPal developer dashboard:
+Configure webhook URL in Razorpay dashboard:
 
 ```
 http://your-domain.com/api/webhook
@@ -102,8 +102,8 @@ Create `.env` file for production:
 
 ```env
 PORT=3000
-PAYPAL_CLIENT_ID=AcTFapMkTuckCRi5Goi5Ll_b2GukjvJYgVYz2ogGNlrR4JcHg6WKGl6R8JS8Rp0-leSrjUygmqNl5lAK
-PAYPAL_CLIENT_SECRET=EASwVCSDOoCwi6839Eqmfz09X5toTxSDA2ovcM9ZptJAymZNdXmUNpuhZiQ9AtfnLEs0GpBMyodK6_kQ
+RAZORPAY_KEY_ID=rzp_live_McNKjjPIAKglzo
+RAZORPAY_KEY_SECRET=r09anvr5bqRnC6iKt0Ywm2GE
 WEBHOOK_SECRET=your_webhook_secret
 NODE_ENV=production
 ```
@@ -115,7 +115,7 @@ NODE_ENV=production
 - Order creation
 - Payment verification
 - Webhook handling
-- OAuth token management
+- Signature validation
 
 ### ✅ Security
 
@@ -135,16 +135,16 @@ NODE_ENV=production
 
 1. **Key Security**: Never commit real keys to version control
 2. **HTTPS Required**: Use HTTPS in production for webhooks
-3. **Webhook Secret**: Set webhook secret in PayPal developer dashboard
+3. **Webhook Secret**: Set webhook secret in Razorpay dashboard
 4. **Error Handling**: All APIs include proper error responses
 
-## 🔄 Migration from Razorpay to PayPal
+## 🔄 Migration from Static to Server
 
-Your resume builder now uses PayPal for payment processing, providing:
+Your resume builder now runs through the server, providing:
 
 - ✅ Secure payment processing
 - ✅ Webhook handling
 - ✅ Better error management
 - ✅ Production-ready architecture
 
-The frontend code has been updated to use PayPal's JavaScript SDK with modal-based payment flow!
+The frontend code remains unchanged - all security improvements are handled server-side!

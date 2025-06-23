@@ -146,8 +146,8 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
-    <!-- PayPal Script -->
-    <script src="https://www.paypal.com/sdk/js?client-id=AcTFapMkTuckCRi5Goi5Ll_b2GukjvJYgVYz2ogGNlrR4JcHg6WKGl6R8JS8Rp0-leSrjUygmqNl5lAK&currency=USD"></script>
+    <!-- Razorpay Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Google tag (gtag.js) -->
     <script
       async
@@ -256,25 +256,13 @@
                 onclick="initiatePayment('pdf')"
                 class="export-btn pdf-btn"
               >
-                <i class="fas fa-file-pdf"></i> Export PDF <small>$1.49</small>
+                <i class="fas fa-file-pdf"></i> Export PDF <small>₹29</small>
               </button>
               <button
                 onclick="initiatePayment('image')"
                 class="export-btn img-btn"
               >
-                <i class="fas fa-image"></i> Export Image <small>$0.99</small>
-              </button>
-              <button
-                onclick="initiatePayment('both')"
-                class="export-btn both-btn"
-              >
-                <i class="fas fa-download"></i> Export Both
-                <small
-                  ><span style="text-decoration: line-through; opacity: 0.7"
-                    >$2.48</span
-                  >
-                  $1.99</small
-                >
+                <i class="fas fa-image"></i> Export Image <small>₹19</small>
               </button>
               <button onclick="loadSampleData()" class="export-btn sample-btn">
                 <i class="fas fa-download"></i> Load Sample
