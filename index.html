@@ -146,8 +146,6 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
-    <!-- Razorpay Script -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Google tag (gtag.js) -->
     <script
       async
@@ -257,16 +255,16 @@
           <div class="export-section">
             <div class="export-buttons">
               <button
-                onclick="initiatePayment('pdf')"
+                onclick="exportToPDF()"
                 class="export-btn pdf-btn"
               >
-                <i class="fas fa-file-pdf"></i> Export PDF <small>₹29</small>
+                <i class="fas fa-file-pdf"></i> Export PDF
               </button>
               <button
-                onclick="initiatePayment('image')"
+                onclick="exportToImage()"
                 class="export-btn img-btn"
               >
-                <i class="fas fa-image"></i> Export Image <small>₹19</small>
+                <i class="fas fa-image"></i> Export Image
               </button>
               <button onclick="loadSampleData()" class="export-btn sample-btn">
                 <i class="fas fa-download"></i> Load Sample
